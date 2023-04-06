@@ -1,0 +1,156 @@
+#!/usr/bin/awk -f
+# vim: ft=awk tw=80 sw=3 ts=3 sts=3
+#
+#-------------------------------------------------------------------------------
+# THINKIES:
+#  Further working on creating a bash preprocessor.
+#
+#  Features it should have:
+#     . "Topics" that can be default hidden, and must be `subscribed` to, or
+#       default shown and must be `unsubscribed` from
+#     . Dot syntax for intermediate nameref expansion
+#     . Optional strip comments, empty newlines
+#
+#-------------------------------------------------------------------------------
+
+BEGIN {
+   # Expecting user to pass in either/both:
+   #- SUBSCRIBE
+   #- UNSUBSCRIBE
+   #
+   # Should be a comma delimited string of topics to subscribe to, or
+   # unsubscribe from.
+
+   # Kinda just for convenience and legibility.
+   true  = 1
+   false = 0
+
+   # topics to subscribe to
+   delete SUB[0]
+   delete _SUB[0]
+   split(SUBSCRIBE, _SUB, ",")
+   for (i in _SUB) gsub(/[[:space:]]/, "", _SUB[i])
+   for (i in _SUB) if (_SUB[i]) SUB[_SUB[i]] = true
+
+   # topics to unsubscribe from
+   delete UNSUB[0]
+   delete _UNSUB[0]
+   split(UNSUBSCRIBE, _UNSUB, ",")
+   for (i in _UNSUB) gsub(/[[:space:]]/, "", _UNSUB[i])
+   for (i in _UNSUB) if (_UNSUB[i]) UNSUB[_UNSUB[i]] = true
+
+   delete CUR_SUBS[0]      # currently subscribed to...
+   delete CUR_UNSUBS[0]    # currently unsubscribed from...
+}
+
+
+function clear(arr,   i) {
+   for (i in arr) delete arr[i]
+}
+
+
+function subscribed(   i, j) {
+   for (i in CUR_SUBS) {
+      for (j in SUB) {
+         if (CUR_SUBS[j]) {
+            return true
+         }
+      }
+   }
+   return false
+}
+
+
+function unsubscribed(   i, j) {
+   for (i in CUR_UNSUBS) {
+      for (j in UNSUB) {
+         if (CUR_UNSUBS[j]) {
+            return true
+         }
+      }
+   }
+   return false
+}
+
+
+function active_sub(   i) {
+   for (i in CUR_SUBS) return true
+   return false
+}
+
+
+function active_unsub(   i) {
+   for (i in CUR_UNSUBS) return true
+   return false
+}
+
+#                                 subscribe to
+#-------------------------------------------------------------------------------
+# match:  start of topic subscription block
+#
+/^\s*#>\s+SUB\s+[[:alpha:]_][[:alnum:]_]*/ {
+   sub(/^\s*#>\s+SUB\s+/, "", $0)
+   gsub(/,/, " ", $0)
+   split($0, topics, " ")
+   for (i in topics) {
+      CUR_SUBS[topics[i]] = true
+   }
+   next
+}
+
+# match:  end of topic subscription block
+#
+/^\s*#>\s+END\s+SUB\s+[[:alpha:]_][[:alnum:]_]*/ {
+   sub(/^\s*#>\s+SUB\s+/, "", $0)
+   gsub(/,/, " ", $0)
+   split($0, topics, " ")
+   for (i in topics) {
+      delete CUR_SUBS[topics[i]]
+   }
+   next
+}
+
+# match:  end of all current subscriptions
+#
+/^\s*#>\s*END\s+SUBS\s*$/ {
+   clear(CUR_SUBS) ; next
+}
+
+#                               unsubscribe from
+#-------------------------------------------------------------------------------
+# match:  start of topic unsubscription block
+#
+/^\s*#>\s+UNSUB\s+[[:alpha:]_][[:alnum:]_]*/ {
+   sub(/^\s*#>\s+UNSUB\s+/, "", $0)
+   gsub(/,/, " ", $0)
+   split($0, topics, " ")
+   for (i in topics) {
+      CUR_UNSUBS[topics[i]] = true
+   }
+   next
+}
+
+# match:  end of topic unsubscription block
+#
+/^\s*#>\s+END\s+UNSUB\s+[[:alpha:]_][[:alnum:]_]*/ {
+   sub(/^\s*#>\s+UNSUB\s+/, "", $0)
+   gsub(/,/, " ", $0)
+   split($0, topics, " ")
+   for (i in topics) {
+      delete CUR_UNSUBS[topics[i]]
+   }
+   next
+}
+
+# match:  end of all current unsubscriptions
+#
+/^\s*#>\s*END\s+UNSUBS\s*$/ {
+   clear(CUR_UNSUBS) ; next
+}
+
+#                                    print
+#-------------------------------------------------------------------------------
+active_sub()   && ! subscribed() { next }
+active_unsub() && unsubscribed() { next }
+
+{ print }

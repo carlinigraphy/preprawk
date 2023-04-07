@@ -26,6 +26,7 @@ subscribe=''
 
 opts=()
 positional=()
+invalid_opts=()
 
 while (( $# )) ; do
    case "$1" in
@@ -74,30 +75,50 @@ while (( $# )) ; do
          set -- "${newopts[@]}"  "$@"
          ;;
 
+      -*)
+         invalid_opts+=( "$1" ) ; shift
+         ;;
+
       *) positional+=( "$1" ) ; shift
          ;;
    esac
 done
 
+#                                  validation
+#-------------------------------------------------------------------------------
+# shellcheck disable=2128
+if [[ $invalid_opts ]] ; then
+   printf 'ERRO: Invalid options:\n'             >&2
+   printf ' [%s]'  "${invalid_opts[@]}"          >&2
+   printf '\n'                                   >&2
+   usage 1
+fi
 
 if (( ! ${#positional[@]} )) ; then
-   printf 'requires file input\n'
+   printf 'ERRO: Requires file input\n' >&2
    usage 2
 elif (( ${#positional[@]} > 1 )) ; then
-   printf 'too many positional arguments:'
-   printf ' [%s]'  "${positional[@]}"
-   printf '\n'
-   usage 1
+   printf 'ERRO: Too many positional arguments:' >&2
+   printf ' [%s]'  "${positional[@]}"            >&2
+   printf '\n'                                   >&2
+   usage 3
 fi
 
 
 input="${positional[0]}"
 output="${OUTDIR}/$(basename "$input")"
 
+
+if [[ ! -r "$input" ]] ; then
+   printf 'ERRO: Input file missing or unreadable\n' >&2
+   exit 4
+fi
+
+#                                    engage
+#-------------------------------------------------------------------------------
 opts+=(
    -v SUBSCRIBE="${subscribe}"
    -v UNSUBSCRIBE="${unsubscribe}"
    -f "${PROGDIR}"/preprawk
 )
-
 awk "${opts[@]}" "$input" > "$output"

@@ -88,8 +88,8 @@ function active_unsub(   i) {
 #-------------------------------------------------------------------------------
 # match:  start of topic subscription block
 #
-/^\s*#>\s+SUB\s+[[:alpha:]_][[:alnum:]_]*/ {
-   sub(/^\s*#>\s+SUB\s+/, "", $0)
+/^\s*#+>\s*SUB\s+[[:alpha:]_][[:alnum:]_]*/ {
+   sub(/^\s*#+>\s*SUB\s+/, "", $0)
    gsub(/,/, " ", $0)
    split($0, topics, " ")
    for (i in topics) {
@@ -100,8 +100,8 @@ function active_unsub(   i) {
 
 # match:  end of topic subscription block
 #
-/^\s*#>\s+END\s+SUB\s+[[:alpha:]_][[:alnum:]_]*/ {
-   sub(/^\s*#>\s+SUB\s+/, "", $0)
+/^\s*#+>\s*END\s+SUB\s+[[:alpha:]_][[:alnum:]_]*/ {
+   sub(/^\s*#+>\s*END\s+SUB\s+/, "", $0)
    gsub(/,/, " ", $0)
    split($0, topics, " ")
    for (i in topics) {
@@ -112,7 +112,7 @@ function active_unsub(   i) {
 
 # match:  end of all current subscriptions
 #
-/^\s*#>\s*END\s+SUBS\s*$/ {
+/^\s*#+>\s*END\s+SUBS\s*$/ {
    clear(CUR_SUBS) ; next
 }
 
@@ -120,8 +120,8 @@ function active_unsub(   i) {
 #-------------------------------------------------------------------------------
 # match:  start of topic unsubscription block
 #
-/^\s*#>\s+UNSUB\s+[[:alpha:]_][[:alnum:]_]*/ {
-   sub(/^\s*#>\s+UNSUB\s+/, "", $0)
+/^\s*#+>\s*UNSUB\s+[[:alpha:]_][[:alnum:]_]*/ {
+   sub(/^\s*#+>\s*UNSUB\s+/, "", $0)
    gsub(/,/, " ", $0)
    split($0, topics, " ")
    for (i in topics) {
@@ -132,8 +132,8 @@ function active_unsub(   i) {
 
 # match:  end of topic unsubscription block
 #
-/^\s*#>\s+END\s+UNSUB\s+[[:alpha:]_][[:alnum:]_]*/ {
-   sub(/^\s*#>\s+UNSUB\s+/, "", $0)
+/^\s*#+>\s*END\s+UNSUB\s+[[:alpha:]_][[:alnum:]_]*/ {
+   sub(/^\s*#+>\s*END\s+UNSUB\s+/, "", $0)
    gsub(/,/, " ", $0)
    split($0, topics, " ")
    for (i in topics) {
@@ -144,7 +144,7 @@ function active_unsub(   i) {
 
 # match:  end of all current unsubscriptions
 #
-/^\s*#>\s*END\s+UNSUBS\s*$/ {
+/^\s*#+>\s*END\s+UNSUBS\s*$/ {
    clear(CUR_UNSUBS) ; next
 }
 

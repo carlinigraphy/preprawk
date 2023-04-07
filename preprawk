@@ -2,24 +2,24 @@
 # vim: ft=awk tw=80 sw=3 ts=3 sts=3
 #
 #-------------------------------------------------------------------------------
-# THINKIES:
-#  Further working on creating a bash preprocessor.
+# Further working on creating a bash preprocessor.
 #
-#  Features it should have:
-#     . "Topics" that can be default hidden, and must be `subscribed` to, or
-#       default shown and must be `unsubscribed` from
-#     . Dot syntax for intermediate nameref expansion
-#     . Optional strip comments, empty newlines
+# Features it should have:
+#  * "Topics" that can be default hidden, and must be `subscribed` to, or
+#    default shown and must be `unsubscribed` from
+#  * Dot syntax for intermediate nameref expansion
+#  * Optional strip comments, empty newlines
 #
 #-------------------------------------------------------------------------------
 
 BEGIN {
    # Expecting user to pass in either/both:
-   #- SUBSCRIBE
-   #- UNSUBSCRIBE
+   #> SUBSCRIBE=""
+   #> UNSUBSCRIBE=""
    #
    # Should be a comma delimited string of topics to subscribe to, or
-   # unsubscribe from.
+   # unsubscribe from. Example:
+   #> awk -f preprawk -v SUBSCRIBE="TESTS" -v UNSUBSCRIBE="NOISE"
 
    # Kinda just for convenience and legibility.
    true  = 1
@@ -148,8 +148,48 @@ function active_unsub(   i) {
    clear(CUR_UNSUBS) ; next
 }
 
+
+# match:  dot notation for accessing nested array
+#         elements, creates intermediate namerefs
+#
+match($0, /\$\{[[:alpha:]_][[:alnum:]_]*(\.[[:alpha:]_][[:alnum:]_]*)+\}/) {
+   text = substr($0, RSTART, RLENGTH)
+   sub(/^\$\{/, "", text) ; sub(/\}$/, "", text)
+   split(text, words, ".")
+
+   match($0, /^\s*/)
+   column = RLENGTH
+   indent = ""
+
+   while (column) {
+      indent = indent " "
+      column = column - 1
+   }
+
+   print indent "unset '__'"
+   print indent "declare -n __=\"${"  words[1]  "}\""
+
+   len = 0
+   for (w in words) len = len + 1
+
+   for (idx=2; idx<len; ++idx) {
+      print indent "declare -n __=\"${__['"  words[idx]  "']}\""
+   }
+
+   repl = "${__['"  words[len]  "']}"
+
+   sub(/\$\{[[:alpha:]_][[:alnum:]_]*(\.[[:alpha:]_][[:alnum:]_]*)+\}/, repl)
+}
+
 #                                    print
 #-------------------------------------------------------------------------------
+/^#!/ && (FNR == 1) && (FNR != NR) { next }  # Skips non-first `#!`
+{ sub(/\s*$/, "") }                          # Clean up EOL whitespace
+
+STRIP_COMMENTS && /^\s*#/ { next }           # Skip comments.
+STRIP_COMMENTS { sub(/\s+#.*$/, "") }        # Strip in-line comments.
+STRIP_NEWLINES && /^\s*$/ { next }           # Skip empty lines.
+
 active_sub()   && ! subscribed() { next }
 active_unsub() && unsubscribed() { next }
 

@@ -2,9 +2,6 @@
 
 # shellcheck disable=2164,2046
 PROGDIR=$( cd $(dirname "${BASH_SOURCE[0]}") ; pwd )
-OUTDIR="${PROGDIR}/dist/"
-mkdir -p "$OUTDIR"
-
 
 function usage {
 cat <<EOF
@@ -88,9 +85,9 @@ done
 #-------------------------------------------------------------------------------
 # shellcheck disable=2128
 if [[ $invalid_opts ]] ; then
-   printf 'ERRO: Invalid options:\n'             >&2
-   printf ' [%s]'  "${invalid_opts[@]}"          >&2
-   printf '\n'                                   >&2
+   printf 'ERRO: Invalid options:\n'    >&2
+   printf ' [%s]'  "${invalid_opts[@]}" >&2
+   printf '\n'                          >&2
    usage 1
 fi
 
@@ -104,11 +101,7 @@ elif (( ${#positional[@]} > 1 )) ; then
    usage 3
 fi
 
-
 input="${positional[0]}"
-output="${OUTDIR}/$(basename "$input")"
-
-
 if [[ ! -r "$input" ]] ; then
    printf 'ERRO: Input file missing or unreadable\n' >&2
    exit 4
@@ -121,4 +114,4 @@ opts+=(
    -v UNSUBSCRIBE="${unsubscribe}"
    -f "${PROGDIR}"/preprawk
 )
-awk "${opts[@]}" "$input" > "$output"
+awk "${opts[@]}" "$input"

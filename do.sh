@@ -92,4 +92,4 @@ opts+=(
    -v UNSUBSCRIBE="${unsubscribe}"
    -f "${PROGDIR}"/preprawk
 )
-awk "${opts[@]}" "${files[@]}"
+awk -f "${PROGDIR}"/preprawk "${opts[@]}" "${files[@]}"
